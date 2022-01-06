@@ -45,12 +45,10 @@ def kaiming_init(module,
     if hasattr(module, 'bias') and module.bias is not None:
         nn.init.constant_(module.bias, bias)
 
-
 def build_3d_conv(block_type,
                   in_channels,
                   out_channels,
                   kernel_size,
-                  mid_channels=None,
                   stride=1,
                   padding=0,
                   dilation=1,
@@ -83,14 +81,11 @@ def build_3d_conv(block_type,
     _dict = OrderedDict()
     if block_type == '2.5d':
         # building block for R(2+1)D conv.
-        # mid_channels = 3 * in_channels * out_channels * \
-        #                kernel_size[1] * kernel_size[2]
-        # mid_channels /= (in_channels * kernel_size[1] *
-        #                  kernel_size[2] + 3 * out_channels)
-        # mid_channels = int(mid_channels)
-        # mid_channels = (3 * in_channels * out_channels * kernel_size[1] * kernel_size[2]) // (in_channels * kernel_size[1] * kernel_size[2] + 3 * out_channels)
-        # print(mid_channels)
-        assert mid_channels is not None
+        mid_channels = 3 * in_channels * out_channels * \
+                       kernel_size[1] * kernel_size[2]
+        mid_channels /= (in_channels * kernel_size[1] *
+                         kernel_size[2] + 3 * out_channels)
+        mid_channels = int(mid_channels)
 
         # build spatial convolution
         _dict['conv_s'] = nn.Conv3d(
@@ -163,12 +158,8 @@ class BasicBlock(nn.Module):
         temporal_stride = (2, ) if down_sampling_temporal else (1, )
         stride = temporal_stride + spatial_stride
 
-        # DEBUG
-        mid_channels = (3 * in_channels * out_channels * 3 * 3) // (in_channels * 3 * 3 + 3 * out_channels)
-
         self.conv1 = build_3d_conv(block_type=block_type,
                                    in_channels=in_channels,
-                                   mid_channels=mid_channels,
                                    out_channels=out_channels,
                                    kernel_size=[3, 3, 3],
                                    stride=stride,
@@ -178,7 +169,6 @@ class BasicBlock(nn.Module):
             self.bn1 = nn.BatchNorm3d(out_channels, eps=1e-3)
         self.conv2 = build_3d_conv(block_type=block_type,
                                    in_channels=out_channels,
-                                   mid_channels=mid_channels,
                                    out_channels=out_channels,
                                    kernel_size=[3, 3, 3],
                                    stride=[1, 1, 1],
@@ -337,7 +327,6 @@ class BaseResNet3D(nn.Module):
                 with_bn=with_bn)
             self.add_module('layer{}'.format(i+1), layer)
             in_channels = int(filter_config[i][0])
-
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(512 , num_class)
 
@@ -366,6 +355,7 @@ class BaseResNet3D(nn.Module):
         x = x.flatten(1)
         x = self.fc(x)
         return x
+
         #if self.return_indices is None:
         #    return feats[-1]
         #else:
@@ -479,11 +469,11 @@ class BaseResNet3D(nn.Module):
         return nn.Sequential(_dict)
 
     #def train(self, mode=True):
-    #    super(BaseBackbone, self).train(mode)
-    #    if self.bn_eval:
-    #        for m in self.modules():
-    #            if isinstance(m, _BatchNorm):
-    #                m.eval()
+        #super(BaseResNet3D, self).train(mode)
+        #if self.bn_eval:
+            #for m in self.modules():
+                #if isinstance(m, _BatchNorm):
+                    #m.eval()
 
 
 class R2Plus1D(BaseResNet3D):
@@ -494,4 +484,3 @@ class R2Plus1D(BaseResNet3D):
 class R3D(BaseResNet3D):
     def __init__(self, *args, **kwargs):
         super(R3D, self).__init__(block_type='3d', *args, **kwargs)
-

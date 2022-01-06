@@ -216,11 +216,13 @@ class R2Plus1DNet(nn.Module):
         return x
 
     def get_feature(self, x):
+        #print("input size",x.size())
         x = self.relu1(self.bn1(self.conv1(x)))
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
         x = self.conv5(x)
+        #print("feature size",x.size())
         return x
 
 

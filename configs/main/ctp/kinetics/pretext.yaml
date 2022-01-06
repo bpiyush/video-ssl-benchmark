@@ -1,4 +1,6 @@
 model:
   name: "downstream"
-  model_dir: "checkpoints/CTP/Kinetics"
-  checkpoint: "pretext_checkpoint/r2p1d18_ctp_k400_epoch_90.pth"
+  #model_dir: "checkpoints/CTP/Kinetics"
+  #checkpoint: "pretext_checkpoint/r2p1d18_ctp_k400_epoch_90.pth"
+  model_dir: "checkpoints/CTP_2/Kinetics"
+  checkpoint: "pretext_checkpoint/snellius_r2p1d18_ctp_k400_epoch_90.pth"

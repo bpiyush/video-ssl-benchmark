@@ -21,10 +21,10 @@ def get_model_class(**kwargs) -> Callable[[int], nn.Module]:
     """
     logger.info(f'Using global get_model_class({kwargs})')
 
-    #cfg = ConfigFactory.from_dict(kwargs)
+    cfg = ConfigFactory.from_dict(kwargs)
 
-    #arch: str = cfg.get_string('arch')
-    arch: str = 'r2plus1d-vcop'
+    arch: str = cfg.get_string('arch')
+
     if arch == 'resnet18':
         from .resnet import resnet18
         model_class = resnet18
@@ -66,6 +66,12 @@ def get_model_class(**kwargs) -> Callable[[int], nn.Module]:
         from .r2plus1d_vcop import R2Plus1DNet
         model_class = lambda num_classes=128: R2Plus1DNet(
             (1, 1, 1, 1),
+            with_classifier=True,
+            num_classes=num_classes
+        )
+    elif arch == 'r2plus1d':
+        from .R2plus1D import R21D
+        model_class = lambda num_classes=128: R21D(
             with_classifier=True,
             num_classes=num_classes
         )
