@@ -59,6 +59,8 @@ def get_model(model_cfg, cfg, eval_dir, args, logger):
 
     if args.pretext_model== 'rspnet':
             model, ckp_manager =  eval_utils.build_model_rsp(model_cfg, cfg, eval_dir, args, logger)
+    elif args.pretext_model== 'tclr':
+            model, ckp_manager =  eval_utils.build_model_tclr(model_cfg, cfg, eval_dir, args, logger)
     elif args.pretext_model== 'avid_cma':
             model, ckp_manager =  eval_utils.build_model_avid_cma(model_cfg, cfg, eval_dir, args, logger)
     elif args.pretext_model== 'pretext_contrast':

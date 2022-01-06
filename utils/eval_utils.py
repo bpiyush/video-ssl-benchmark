@@ -476,8 +476,8 @@ class ClassificationWrapper(torch.nn.Module):
 
 
 def build_model_avid_cma(feat_cfg, eval_cfg, eval_dir, args, logger):
-    import avid.models
-    pretrained_net = avid.models.__dict__[feat_cfg['arch']](**feat_cfg['args'])
+    import networks.avid_cma.models as avid_cma_models
+    pretrained_net = avid_cma_models.__dict__[feat_cfg['arch']](**feat_cfg['args'])
 
     # Load from checkpoint
     checkpoint_fn = '{}/{}'.format(feat_cfg['model_dir'] ,feat_cfg['checkpoint'])
@@ -614,6 +614,30 @@ def build_model_rsp(feat_cfg, eval_cfg, eval_dir, args, logger):
 
     ckp_manager = CheckpointManager(eval_dir, rank=args.gpu)
     return model, ckp_manager
+
+
+def build_model_tclr(feat_cfg, eval_cfg, eval_dir, args, logger):
+    #tclr imports
+    from networks.tclr.model import build_r2p1d_classifier
+
+    checkpoint_fn = '{}/{}'.format(feat_cfg['model_dir'], feat_cfg['checkpoint'])
+
+    # tclr model
+    model = build_r2p1d_classifier(num_classes = eval_cfg['model']['args']['n_classes'],saved_model_file = checkpoint_fn)
+    # Load from checkpoint
+    #load_rsp_checkpoint(model,checkpoint_fn)
+
+    # Log model description
+    logger.add_line("=" * 30 + "   Model   " + "=" * 30)
+    logger.add_line(str(model))
+    logger.add_line("=" * 30 + "   Parameters   " + "=" * 30)
+    logger.add_line(main_utils.parameter_description(model))
+    logger.add_line("=" * 30 + "   Pretrained model   " + "=" * 30)
+    logger.add_line("File: {}".format(checkpoint_fn))
+
+    ckp_manager = CheckpointManager(eval_dir, rank=args.gpu)
+    return model, ckp_manager
+
 
 def build_model_gdt(feat_cfg, eval_cfg, eval_dir, args, logger):
 

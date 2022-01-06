@@ -19,6 +19,14 @@ CUDA_VISIBLE_DEVICES=0 python aot.py $cfg configs/main/gdt/kinetics/pretext.yaml
 
 CUDA_VISIBLE_DEVICES=3 python aot.py $cfg configs/main/selavi/kinetics/pretext.yaml --pretext-model selavi --wandb_run_name diva/ssl_benchmark/selavi
 
+
+CUDA_VISIBLE_DEVICES=0 python aot.py $cfg configs/main/tclr/kinetics/pretext.yaml --pretext-model tclr --wandb_run_name diva/ssl_benchmark/tclr
+
+CUDA_VISIBLE_DEVICES=1 python aot.py $cfg configs/main/avid_cma/kinetics/pretext_avid_cma.yaml --pretext-model avid_cma --wandb_run_name diva/ssl_benchmark/avid_cma
+
+#python finetune.py configs/benchmark/gym99/112x112x32.yaml  configs/main/gdt/kinetics/pretext.yaml --pretext-model gdt
+
+
 #python finetune.py configs/benchmark/gym99/112x112x32.yaml  configs/main/full_supervision/kinetics/pretext.yaml --pretext-model full_supervision
 
-# rspnet, avid, ctp -> use different checkpoints
+# rspnet, ~avid~, ctp -> use different checkpoints
