@@ -1,0 +1,4 @@
+model:
+  name: "downstream"
+  model_dir: "checkpoints/PRETEXT_CONTRAST/Kinetics"
+  checkpoint: "pretext_checkpoint/pcl_r2p1d_res_ssl.pt"

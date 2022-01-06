@@ -1,0 +1,5 @@
+model:
+  name: "downstream"
+  model_dir: "checkpoints/TCLR/Kinetics"
+  arch: "r2plus1d-vcop"
+  checkpoint: "pretext_checkpoint/rpd18kin400.pth"

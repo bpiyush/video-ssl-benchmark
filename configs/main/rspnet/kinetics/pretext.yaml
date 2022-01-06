@@ -1,0 +1,9 @@
+model:
+  name: "downstream"
+  model_dir: "checkpoints/RSPNET_snellius/Kinetics"
+  arch: "r2plus1d"
+  checkpoint: "pretext_checkpoint/snellius_checkpoint_epoch_200.pth.tar"
+  #checkpoint: "pretext_checkpoint/R21D_checkpoint_epoch_100.pth.tar"
+  #checkpoint: "pretext_checkpoint/R21D_checkpoint_epoch_155.pth.tar"
+  #arch: "r2plus1d-vcop"
+  #checkpoint: "pretext_checkpoint/model_best_r21d_200epoch.pth.tar"

@@ -1,0 +1,6 @@
+model:
+  name: "downstream"
+  model_dir: "checkpoints/FULL_SUPERVISION/Kinetics"
+  checkpoint: "pretext_checkpoint/r2plus1d_18-91a641e6.pth"
+  #checkpoint: "pretext_checkpoint/fake_ckpt.pth"
+  arch: "r2plus1d_18"

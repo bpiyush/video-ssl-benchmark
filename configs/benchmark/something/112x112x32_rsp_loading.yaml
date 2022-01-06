@@ -1,0 +1,51 @@
+required_devices: 8
+resume: false
+
+no_test: false
+test_only: false
+debug: false
+seed: 0
+distributed: false
+test_freq: 5
+num_workers: 20
+
+benchmark:
+  name: "something-full_finetune_112x112x32"
+
+dataset:
+  name: "smth_smth"
+  fold: 1
+  batch_size: 32
+  temporal_size: 32.
+  crop_size: 112
+  crop_area_min: 0.28
+  crop_area_max: 1.0
+  color: [0.4, 0.4, 0.4, 0.2]
+  train:
+    split: "train"
+    mode: "cover"
+    clips_per_video: 1
+  val:
+    split: "val"
+    mode: "cover"
+    clips_per_video: 1
+  test:
+    split: "test"
+    mode: "cover"
+    clips_per_video: 10
+
+optimizer:
+  name: "adam"
+  num_epochs: 35
+  weight_decay: 0.0
+  warmup_classifier: false
+  lr:
+    name: "multistep"
+    base_lr: 0.0001
+    gamma: 0.3
+    milestones: [20, 30, ]
+
+model:
+  args:
+    n_classes: 174
+    feat_dim: 512

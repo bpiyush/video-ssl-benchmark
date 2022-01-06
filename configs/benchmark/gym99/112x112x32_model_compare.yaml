@@ -1,0 +1,64 @@
+required_devices: 8
+resume: true
+
+no_test: false
+test_only: false
+debug: false
+seed: 0
+distributed: false
+test_freq: 5
+num_workers: 5
+
+benchmark:
+  name: "gym99-model_compare_112X112x32"
+
+dataset:
+  name: "gym99"
+  fold: 1
+  #batch_size: 32
+  batch_size: 5
+  clip_duration: 0.5
+  video_fps: 32.
+  crop_size: 112
+  transform: "msc+color"
+  min_area: 0.08
+  color: [0., 0., 0., 0.]
+  switch_channels: false
+  normalize: true
+  train:
+    split: "trainlist{fold:02d}"
+    mode: "clip"
+    clips_per_video: 10
+    use_augmentation: true
+    use_shuffle: true
+    drop_last: true
+  test:
+    split: "testlist{fold:02d}"
+    mode: "clip"
+    clips_per_video: 5
+    use_augmentation: false
+    use_shuffle: false
+    drop_last: true
+  test_dense:
+    split: "testlist{fold:02d}"
+    mode: "video"
+    clips_per_video: 10
+    use_augmentation: false
+    use_shuffle: false
+    drop_last: false
+
+optimizer:
+  name: "adam"
+  num_epochs: 16
+  weight_decay: 0.0
+  warmup_classifier: false
+  lr:
+    name: "multistep"
+    base_lr: 0.0001
+    gamma: 0.3
+    milestones: [6, 10, 14]
+
+model:
+  args:
+    n_classes: 99
+    feat_dim: 512

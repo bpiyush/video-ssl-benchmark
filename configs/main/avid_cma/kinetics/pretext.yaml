@@ -1,0 +1,13 @@
+model:
+  name: "downstream"
+  model_dir: "checkpoints/AVID-CMA/Kinetics"
+  checkpoint: "pretext_checkpoint/ckpt-ep20.pth.tar"
+  arch: "av_wrapper"
+  args:
+    proj_dim: [512, 512, 128]
+    video_backbone: "PyTorchR2Plus1D"
+    video_backbone_args:
+      pretrained: false
+    audio_backbone: "Conv2D"
+    audio_backbone_args:
+      depth: 10

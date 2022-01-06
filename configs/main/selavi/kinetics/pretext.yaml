@@ -1,0 +1,6 @@
+model:
+  name: "downstream"
+  model_dir: "checkpoints/SELAVI/Kinetics"
+  checkpoint: "pretext_checkpoint/selavi_kinetics.pth"
+  vid_base_arch: "r2plus1d_18"
+  aud_base_arch: "resnet9"

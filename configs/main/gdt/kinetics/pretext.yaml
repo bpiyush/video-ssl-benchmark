@@ -1,0 +1,7 @@
+model:
+  name: "downstream"
+  model_dir: "checkpoints/GDT/Kinetics"
+  checkpoint: "pretext_checkpoint/gdt_K400.pth"
+  model_type: "av_gdt"
+  vid_base_arch: "r2plus1d_18"
+  aud_base_arch: "resnet9"
