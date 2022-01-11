@@ -53,6 +53,7 @@ def get_model_only_backbone(model_cfg, cfg, eval_dir, args, logger):
             model, ckp_manager =  eval_utils.build_model_tclr(
                 model_cfg, cfg, eval_dir, args, logger,
             )
+            model.fc = torch.nn.Identity()
     elif args.pretext_model== 'avid_cma':
             model, ckp_manager =  eval_utils.build_model_avid_cma(
                 model_cfg, cfg, eval_dir, args, logger,
