@@ -39,6 +39,7 @@ parser.add_argument('--pretext-model', default='rspnet')
 parser.add_argument('--no_wandb', action='store_true')
 parser.add_argument('--freeze_backbone', action='store_true')
 parser.add_argument('--ignore_cache', action='store_true')
+parser.add_argument('--no_feat_norm', action='store_true')
 parser.add_argument('-w', '--wandb_run_name', default="base", type=str, help='name of run on W&B')
 
 
@@ -238,7 +239,7 @@ def retrieval(
     return retrieval_dict
 
 
-def main_worker(gpu, ngpus, fold, args, cfg, norm_feat=True):
+def main_worker(gpu, ngpus, fold, args, cfg):
     args.gpu = gpu
     args.world_size = ngpus
 
@@ -270,7 +271,7 @@ def main_worker(gpu, ngpus, fold, args, cfg, norm_feat=True):
     test_results = model_features_for_given_dataset(model, test_loader, mode="test", name=args.wandb_run_name, use_cached=(not args.ignore_cache))
 
     # normalize features
-    if norm_feat:
+    if not args.no_feat_norm:
         train_results["features"] /= train_results["features"].norm(dim=1, p=2, keepdim=True)
         test_results["features"] /= test_results["features"].norm(dim=1, p=2, keepdim=True)
 
