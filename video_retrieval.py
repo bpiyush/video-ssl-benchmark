@@ -166,7 +166,7 @@ def retrieval(
             retrieval_dict[vid_idx]['recal_acc'][str(recall_treshold)] = acc_value
             retrieval_dict[vid_idx]['neighbors'][str(recall_treshold)] = neighbor_indices
             recall_dict[recall_treshold].append(recall_value)
-        print(f'{i} / {len(feat_val)}', end='\r')
+        print(f'Computing retrieval benchmarks for video: {i} / {len(feat_val)}', end='\r')
 
     # Calculate mean recall values
     for recall_treshold in [1, 5, 10, 20, 50]:
