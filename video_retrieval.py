@@ -1,7 +1,8 @@
 """
 Feature-based retrieval for a video.
 """
-
+from genericpath import exists
+import os
 from os.path import basename
 from collections import defaultdict
 import argparse
@@ -64,9 +65,14 @@ def main():
         main_worker(None, ngpus, cfg['dataset']['fold'], args, cfg)
 
 
-def model_features_for_given_dataset(model, dataloader):
+def model_features_for_given_dataset(model, dataloader, mode="train", use_cached=True):
     """Computes model features for a given dataset."""
     from tqdm import tqdm
+
+    results_path = f"./cache/features/{mode}.pt"
+    os.makedirs(os.path.dirname(results_path), exist_ok=True)
+    if use_cached and os.path.exists(results_path):
+        return torch.load(results_path, map_location="cpu")
 
     results = {
         "features": [],
@@ -80,13 +86,8 @@ def model_features_for_given_dataset(model, dataloader):
     )
     with torch.no_grad():
         for batch in iterator:
-            # import ipdb; ipdb.set_trace()
             frames = batch["frames"]
             labels = batch["label"]
-            # frames, labels = batch
-
-            # remove time dimension since number of frames 1
-            frames = frames.squeeze(2)
 
             # forward pass
             features = model(frames)
@@ -96,6 +97,9 @@ def model_features_for_given_dataset(model, dataloader):
 
     results["features"] = torch.cat(results["features"], dim=0)
     results["labels"] = torch.cat(results["labels"], dim=0)
+
+    if not exists(results_path):
+        torch.save(results, results_path)
 
     return results
 
@@ -201,8 +205,8 @@ def main_worker(gpu, ngpus, fold, args, cfg, norm_feat=True):
     model = distribute_model_to_cuda(model, args, cfg)
 
     # get features
-    train_results = model_features_for_given_dataset(model, train_loader)
-    test_results = model_features_for_given_dataset(model, test_loader)
+    train_results = model_features_for_given_dataset(model, train_loader, mode="train")
+    test_results = model_features_for_given_dataset(model, test_loader, mode="test")
 
     # normalize features
     if norm_feat:
@@ -214,11 +218,11 @@ def main_worker(gpu, ngpus, fold, args, cfg, norm_feat=True):
 
     # Get retrieval benchmarks
     retrieval_dict = retrieval(
-        train_results["features"],
-        train_results["labels"],
+        train_results["features"].numpy(),
+        train_results["labels"].numpy(),
         list(range(len(train_results["features"]))),
-        test_results["features"],
-        test_results["labels"],
+        test_results["features"].numpy(),
+        test_results["labels"].numpy(),
         list(range(len(test_results["features"]))),
         train_aud_features=None, 
         val_aud_features=None, 

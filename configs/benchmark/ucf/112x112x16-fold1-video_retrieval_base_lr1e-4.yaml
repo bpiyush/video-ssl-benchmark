@@ -30,8 +30,8 @@ dataset:
     clips_per_video: 1
     mode: "clip"
     use_augmentation: false # no augmentations during train as well
-    use_shuffle: true
-    drop_last: true
+    use_shuffle: false
+    drop_last: false
   test:
     split: "testlist{fold:02d}"
     clips_per_video: 1

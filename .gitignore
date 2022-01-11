@@ -4,6 +4,7 @@ checkpoints/*.pth
 # logs and cache
 wandb/
 *.swp
+cache/**/*
 datasets/cache/
 datasets/assets/
 *.jsonnet
