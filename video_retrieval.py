@@ -65,11 +65,11 @@ def main():
         main_worker(None, ngpus, cfg['dataset']['fold'], args, cfg)
 
 
-def model_features_for_given_dataset(model, dataloader, mode="train", use_cached=True):
+def model_features_for_given_dataset(model, dataloader, mode="train", name="sample", use_cached=True):
     """Computes model features for a given dataset."""
     from tqdm import tqdm
 
-    results_path = f"./cache/features/{mode}.pt"
+    results_path = f"./cache/features/{name}_{mode}.pt"
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
     if use_cached and os.path.exists(results_path):
         return torch.load(results_path, map_location="cpu")
@@ -205,8 +205,8 @@ def main_worker(gpu, ngpus, fold, args, cfg, norm_feat=True):
     model = distribute_model_to_cuda(model, args, cfg)
 
     # get features
-    train_results = model_features_for_given_dataset(model, train_loader, mode="train")
-    test_results = model_features_for_given_dataset(model, test_loader, mode="test")
+    train_results = model_features_for_given_dataset(model, train_loader, mode="train", name=args.wandb_run_name)
+    test_results = model_features_for_given_dataset(model, test_loader, mode="test", name=args.wandb_run_name)
 
     # normalize features
     if norm_feat:
