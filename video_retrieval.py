@@ -12,6 +12,7 @@ import yaml
 import torch
 import wandb
 import numpy as np
+from tqdm import tqdm
 
 import utils.logger
 from utils import main_utils, eval_utils
@@ -37,7 +38,58 @@ parser.add_argument('--port', default='1234')
 parser.add_argument('--pretext-model', default='rspnet')
 parser.add_argument('--no_wandb', action='store_true')
 parser.add_argument('--freeze_backbone', action='store_true')
+parser.add_argument('--ignore_cache', action='store_true')
 parser.add_argument('-w', '--wandb_run_name', default="base", type=str, help='name of run on W&B')
+
+
+def get_model_only_backbone(model_cfg, cfg, eval_dir, args, logger):
+
+    if args.pretext_model== 'rspnet':
+            model, ckp_manager =  eval_utils.build_model_rsp(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+            model.fc = torch.nn.Identity()
+    elif args.pretext_model== 'tclr':
+            model, ckp_manager =  eval_utils.build_model_tclr(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+    elif args.pretext_model== 'avid_cma':
+            model, ckp_manager =  eval_utils.build_model_avid_cma(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+            model.classifier = torch.nn.Identity()
+    elif args.pretext_model== 'pretext_contrast':
+            model, ckp_manager =  eval_utils.build_model_pretext_contrast(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+            model.linear = torch.nn.Identity()
+    elif args.pretext_model== 'gdt':
+            model, ckp_manager =  eval_utils.build_model_gdt(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+            model.classifier = torch.nn.Identity()
+    elif args.pretext_model== 'ctp':
+            model, ckp_manager =  eval_utils.build_model_ctp(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+            model.fc = torch.nn.Identity()
+    elif args.pretext_model== 'video_moco':
+            model, ckp_manager =  eval_utils.build_model_video_moco(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+            model.fc = torch.nn.Identity()
+    elif args.pretext_model== 'selavi':
+            model, ckp_manager =  eval_utils.build_model_selavi(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+            model.classifier = torch.nn.Identity()
+    elif args.pretext_model== 'full_supervision':
+            model, ckp_manager =  eval_utils.build_model_full_supervision(
+                model_cfg, cfg, eval_dir, args, logger,
+            )
+            model.fc = torch.nn.Identity()
+
+    return model, ckp_manager
 
 
 def main():
@@ -67,7 +119,6 @@ def main():
 
 def model_features_for_given_dataset(model, dataloader, mode="train", name="sample", use_cached=True):
     """Computes model features for a given dataset."""
-    from tqdm import tqdm
 
     results_path = f"./cache/features/{name}_{mode}.pt"
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
@@ -97,6 +148,8 @@ def model_features_for_given_dataset(model, dataloader, mode="train", name="samp
 
     results["features"] = torch.cat(results["features"], dim=0)
     results["labels"] = torch.cat(results["labels"], dim=0)
+    
+    assert results["features"].shape == torch.Size([len(results["labels"]), 512])
 
     if not exists(results_path):
         torch.save(results, results_path)
@@ -117,6 +170,9 @@ def retrieval(
 ):
     """
     Computes retrieval scores for a given dataset.
+    
+    Function borrowed from Facebook's SeLaVi codebase.
+    Link: https://github.com/facebookresearch/selavi/
     """
     from sklearn.neighbors import NearestNeighbors
 
@@ -143,7 +199,13 @@ def retrieval(
     neigh.fit(feat_train)
     recall_dict = defaultdict(list)
     retrieval_dict = {}
-    for i in range(len(feat_val)):
+
+    iterator = tqdm(
+        range(len(feat_val)),
+        desc=f'Computing retrieval results per video',
+        bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',
+    )
+    for i in iterator:
         feat = np.expand_dims(feat_val[i], 0)
         vid_idx = val_vid_indices[i]
         vid_label = val_labels[i]
@@ -166,7 +228,7 @@ def retrieval(
             retrieval_dict[vid_idx]['recal_acc'][str(recall_treshold)] = acc_value
             retrieval_dict[vid_idx]['neighbors'][str(recall_treshold)] = neighbor_indices
             recall_dict[recall_treshold].append(recall_value)
-        print(f'Computing retrieval benchmarks for video: {i} / {len(feat_val)}', end='\r')
+        # print(f'Computing retrieval benchmarks for video: {i} / {len(feat_val)}', end='\r')
 
     # Calculate mean recall values
     for recall_treshold in [1, 5, 10, 20, 50]:
@@ -183,14 +245,13 @@ def main_worker(gpu, ngpus, fold, args, cfg, norm_feat=True):
     eval_dir, model_cfg, logger = eval_utils.prepare_environment(args, cfg, fold)
 
     # create pretext model
-    model, ckp_manager = get_model(model_cfg, cfg, eval_dir, args, logger) 
+    model, ckp_manager = get_model_only_backbone(model_cfg, cfg, eval_dir, args, logger) 
     
     # freeze the backbone
     if args.freeze_backbone:
         model = eval_utils.freeze_backbone(model, args.pretext_model)
     
-    # replace fully connected layer with a identity layer since we only want to extract features
-    model.fc = torch.nn.Identity()
+    # eval mode
     model = model.eval()
 
     # Optimizer
@@ -199,14 +260,13 @@ def main_worker(gpu, ngpus, fold, args, cfg, norm_feat=True):
     # Datasets
     train_loader, test_loader, dense_loader = eval_utils.build_dataloaders(
         cfg['dataset'], fold, cfg['num_workers'], args.distributed, logger)
-    # train_loader, test_loader = build_dataloaders_debug(cfg)
 
     # Distribute
     model = distribute_model_to_cuda(model, args, cfg)
 
     # get features
-    train_results = model_features_for_given_dataset(model, train_loader, mode="train", name=args.wandb_run_name)
-    test_results = model_features_for_given_dataset(model, test_loader, mode="test", name=args.wandb_run_name)
+    train_results = model_features_for_given_dataset(model, train_loader, mode="train", name=args.wandb_run_name, use_cached=(not args.ignore_cache))
+    test_results = model_features_for_given_dataset(model, test_loader, mode="test", name=args.wandb_run_name, use_cached=(not args.ignore_cache))
 
     # normalize features
     if norm_feat:

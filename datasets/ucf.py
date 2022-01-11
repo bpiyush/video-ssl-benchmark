@@ -8,11 +8,17 @@
 from datasets.video_db import VideoDataset
 from utils.constants import UCF_ANNO_PATH as ANNO_PATH
 from utils.constants import UCF_DATA_PATH as DATA_PATH
+from utils.constants import get_data_paths
 
 # DATA_PATH = '/ssdstore/fmthoker/ucf101/UCF-101'
 # ANNO_PATH = '/ssdstore/fmthoker/ucf101/ucfTrainTestlist'
 #DATA_PATH = '/home/fthoker/ucf101/UCF-101'
 #ANNO_PATH = '/home/fthoker/ucf101/ucfTrainTestlist'
+
+
+UCF_PATHS = get_data_paths(dataset_name='UCF')
+DATA_PATH = UCF_PATHS['data']
+ANNO_PATH = UCF_PATHS['annotations']
 
 
 class UCF(VideoDataset):

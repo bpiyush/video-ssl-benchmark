@@ -2,6 +2,7 @@
 checkpoints/*.pth
 
 # logs and cache
+logs/
 wandb/
 *.swp
 cache/**/*

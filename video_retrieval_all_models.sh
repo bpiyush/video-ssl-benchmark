@@ -1,6 +1,10 @@
 
 cfg=configs/benchmark/ucf/112x112x16-fold1-video_retrieval_base_lr1e-4.yaml
 
+
+echo "Running video retrieval with scratch"
+python video_retrieval.py $cfg configs/main/full_supervision/kinetics/pretext_scratch.yaml --pretext-model full_supervision --wandb_run_name pretrain_full_supervision --no_wandb
+
 echo "Running video retrieval with full_supervision"
 python video_retrieval.py $cfg configs/main/full_supervision/kinetics/pretext.yaml --pretext-model full_supervision --wandb_run_name pretrain_full_supervision --no_wandb
 

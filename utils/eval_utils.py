@@ -773,13 +773,11 @@ def build_model_full_supervision(feat_cfg, eval_cfg, eval_dir, args, logger):
 
     # create model
     print("=============> creating model '{}'".format(feat_cfg['arch']))
-    pretrained = eval_cfg["model"]["args"].get("pretrained", True)
-    print("=============> Using pretrained model: {}".format(pretrained))
-    model = models.__dict__[feat_cfg['arch']](pretrained=pretrained)
+    model = models.__dict__[feat_cfg['arch']](pretrained=False)
 
     # Load from checkpoint
     checkpoint_fn = '{}/{}'.format(feat_cfg['model_dir'] ,feat_cfg['checkpoint'])
-    if os.path.exists(checkpoint_fn) and pretrained:
+    if os.path.exists(checkpoint_fn):
         print("Loading model weights")
         ckpt_dict = torch.load(checkpoint_fn)
         msg = model.load_state_dict(ckpt_dict, strict=True)
