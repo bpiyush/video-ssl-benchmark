@@ -119,10 +119,17 @@ def main():
         main_worker(None, ngpus, cfg['dataset']['fold'], args, cfg)
 
 
-def model_features_for_given_dataset(model, dataloader, mode="train", name="sample", use_cached=True):
+def model_features_for_given_dataset(
+        model,
+        dataloader,
+        mode="train",
+        name="sample",
+        use_cached=True,
+        dense_loader=False,
+    ):
     """Computes model features for a given dataset."""
 
-    results_path = f"./cache/features/{name}_{mode}.pt"
+    results_path = f"./cache/features/{name}_{mode}_dense_{dense_loader}.pt"
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
     if use_cached and os.path.exists(results_path):
         return torch.load(results_path, map_location="cpu")
@@ -143,7 +150,13 @@ def model_features_for_given_dataset(model, dataloader, mode="train", name="samp
             labels = batch["label"]
 
             # forward pass
-            features = model(frames)
+            if not dense_loader:
+                features = model(frames)
+            else:
+                batch_size, clips_per_sample = frames.shape[0], frames.shape[1]
+                frames = frames.flatten(0, 1).contiguous()
+                features = model(frames)
+                features = features.view(batch_size, clips_per_sample, -1).mean(1)
 
             results["features"].append(features.cpu())
             results["labels"].append(labels.cpu())
@@ -169,6 +182,7 @@ def retrieval(
     train_aud_features=None,
     val_aud_features=None,
     task='v-v',
+    **neighbor_kwargs,
 ):
     """
     Computes retrieval scores for a given dataset.
@@ -197,7 +211,8 @@ def retrieval(
         feat_train = train_aud_features
 
     # Create 
-    neigh = NearestNeighbors(n_neighbors=50)
+    neigh = NearestNeighbors(n_neighbors=50, metric="cosine", **neighbor_kwargs)
+    print(":::: Using metric: {}".format(neigh.metric))
     neigh.fit(feat_train)
     recall_dict = defaultdict(list)
     retrieval_dict = {}
@@ -262,13 +277,29 @@ def main_worker(gpu, ngpus, fold, args, cfg):
     # Datasets
     train_loader, test_loader, dense_loader = eval_utils.build_dataloaders(
         cfg['dataset'], fold, cfg['num_workers'], args.distributed, logger)
+    is_train_dense = cfg["dataset"]["train"]["mode"] == "video"
+    is_test_dense = cfg["dataset"]["test"]["mode"] == "video"
 
     # Distribute
     model = distribute_model_to_cuda(model, args, cfg)
 
     # get features
-    train_results = model_features_for_given_dataset(model, train_loader, mode="train", name=args.wandb_run_name, use_cached=(not args.ignore_cache))
-    test_results = model_features_for_given_dataset(model, test_loader, mode="test", name=args.wandb_run_name, use_cached=(not args.ignore_cache))
+    train_results = model_features_for_given_dataset(
+        model,
+        train_loader,
+        mode="train",
+        name=args.wandb_run_name,
+        use_cached=(not args.ignore_cache),
+        dense_loader=is_train_dense,
+    )
+    test_results = model_features_for_given_dataset(
+        model,
+        test_loader,
+        mode="test",
+        name=args.wandb_run_name,
+        use_cached=(not args.ignore_cache),
+        dense_loader=is_test_dense,
+    )
 
     # normalize features
     if not args.no_feat_norm:
