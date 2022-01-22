@@ -21,6 +21,12 @@ DATA_PATHS = {
             "annotations": "/local-ssd/fmthoker/ucf101/ucfTrainTestlist",
         }
     },
+    "node407": {
+        "UCF": {
+            "data": "/local-ssd/fmthoker/ucf101/UCF-101",
+            "annotations": "/local-ssd/fmthoker/ucf101/ucfTrainTestlist",
+        }
+    },
 }
 
 

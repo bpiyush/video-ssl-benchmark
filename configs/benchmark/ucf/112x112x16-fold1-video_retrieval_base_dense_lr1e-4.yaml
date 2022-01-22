@@ -20,7 +20,6 @@ dataset:
   video_fps: 16.
   crop_size: 112
   resize: 128
-  clip_duration: 1.0
   video_fps: 16.
   transform: "msc+color"
   min_area: 0.08
