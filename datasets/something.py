@@ -23,9 +23,10 @@ DATA_PATH = '/local-ssd/fmthoker/20bn-something-something-v2/something-something
 ANNO_PATH = '/local-ssd/fmthoker/20bn-something-something-v2/something-something-v2-annotations/'
 
 GRANULARITIES = {
-    "coarse": 10,
-    "fine": 174,
-    "coarse_plus_fine": 40, # 10 coarse + 30 fine
+    "coarse_10": 10, # created from 41 (easy) classes out of 174
+    "coarse_50": 50, # created from all 174 classes
+    "fine": 174, # all classes
+    "coarse_10_plus_fine": 40, # 10 coarse + 30 fine
 }
 
 
@@ -99,17 +100,19 @@ class SOMETHING(VideoDataset):
 
         # print(filenames[0:10],labels[0:10])
 
-        if self.granularity == 'coarse':
-            self.num_classes = GRANULARITIES["coarse"]
+        if self.granularity == 'coarse_10':
             URL = "https://raw.githubusercontent.com/willprice/20bn-something-something-label-hierarchies/master/fine_to_10_classes.csv"
             df = pd.read_csv(URL)
             fine_to_coarse = dict(df[["fine_grained_class_index", "coarse_class_index"]].values)
-
+            filenames, labels = filter_examples_based_on_granularity(filenames, labels, fine_to_coarse)
+        
+        elif self.granularity == 'coarse_50':
+            URL = "https://raw.githubusercontent.com/willprice/20bn-something-something-label-hierarchies/master/fine_to_coarse.csv"
+            df = pd.read_csv(URL)
+            fine_to_coarse = dict(df[["fine_grained_class_index", "coarse_grained_class_index"]].values)
             filenames, labels = filter_examples_based_on_granularity(filenames, labels, fine_to_coarse)
 
-        elif self.granularity == "coarse_plus_fine":
-            self.num_classes = GRANULARITIES["coarse_plus_fine"]
-
+        elif self.granularity == "coarse_10_plus_fine":
             # first obtain coarse labels
             URL = "https://raw.githubusercontent.com/willprice/20bn-something-something-label-hierarchies/master/fine_to_10_classes.csv"
             df = pd.read_csv(URL)
@@ -130,8 +133,8 @@ class SOMETHING(VideoDataset):
             coarse_index_original_to_given = {original_coarse_class_to_index[k]: given_coarse_class_to_index[k] for k in original_coarse_class_to_index}
             fine_to_coarse = {k: coarse_index_original_to_given[v] for k, v in fine_to_coarse.items()}
 
-            fine_to_coarse_plus_fine = {**fine_to_coarse, **fine_to_selected_fine}
-            filenames, labels = filter_examples_based_on_granularity(filenames, labels, fine_to_coarse_plus_fine)
+            fine_to_coarse_10_plus_fine = {**fine_to_coarse, **fine_to_selected_fine}
+            filenames, labels = filter_examples_based_on_granularity(filenames, labels, fine_to_coarse_10_plus_fine)
 
         self.num_videos = len(filenames)
         self.num_classes = len(set(labels))
@@ -161,5 +164,6 @@ class SOMETHING(VideoDataset):
 
 if __name__ == "__main__":
     dataset = SOMETHING('test')
-    dataset = SOMETHING('test', granularity='coarse')
-    dataset = SOMETHING('test', granularity='coarse_plus_fine')
+    dataset = SOMETHING('test', granularity='coarse_10')
+    dataset = SOMETHING('test', granularity='coarse_50')
+    dataset = SOMETHING('test', granularity='coarse_10_plus_fine')
