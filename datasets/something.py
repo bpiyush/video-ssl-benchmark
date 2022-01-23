@@ -22,10 +22,6 @@ import numpy as np
 DATA_PATH = '/local-ssd/fmthoker/20bn-something-something-v2/something-something-v2-videos_avi'
 ANNO_PATH = '/local-ssd/fmthoker/20bn-something-something-v2/something-something-v2-annotations/'
 
-FINE_TO_COARSE_URLS = {
-    10: "https://raw.githubusercontent.com/willprice/20bn-something-something-label-hierarchies/master/fine_to_10_classes.csv",
-}
-
 GRANULARITIES = {
     "coarse": 10,
     "fine": 174,
@@ -105,7 +101,8 @@ class SOMETHING(VideoDataset):
 
         if self.granularity == 'coarse':
             self.num_classes = GRANULARITIES["coarse"]
-            df = pd.read_csv(FINE_TO_COARSE_URLS[GRANULARITIES["coarse"]])
+            URL = "https://raw.githubusercontent.com/willprice/20bn-something-something-label-hierarchies/master/fine_to_10_classes.csv"
+            df = pd.read_csv(URL)
             fine_to_coarse = dict(df[["fine_grained_class_index", "coarse_class_index"]].values)
 
             filenames, labels = filter_examples_based_on_granularity(filenames, labels, fine_to_coarse)
@@ -114,7 +111,8 @@ class SOMETHING(VideoDataset):
             self.num_classes = GRANULARITIES["coarse_plus_fine"]
 
             # first obtain coarse labels
-            df = pd.read_csv(FINE_TO_COARSE_URLS[GRANULARITIES["coarse"]])
+            URL = "https://raw.githubusercontent.com/willprice/20bn-something-something-label-hierarchies/master/fine_to_10_classes.csv"
+            df = pd.read_csv(URL)
             fine_to_coarse = dict(df[["fine_grained_class_index", "coarse_class_index"]].values)
 
             # select certain fine labels to ve added to coarse labels
@@ -137,6 +135,7 @@ class SOMETHING(VideoDataset):
 
         self.num_videos = len(filenames)
         self.num_classes = len(set(labels))
+        assert self.num_classes == GRANULARITIES[self.granularity]
 
         print("")
         print(f"Using granularity: {self.granularity}")
