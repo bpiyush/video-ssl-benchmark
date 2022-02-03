@@ -19,6 +19,9 @@ import numpy as np
 #DATA_PATH = '/home/fthoker/20bn-something-something-v2/something-something-v2-videos_avi'
 #ANNO_PATH = '/home/fthoker/20bn-something-something-v2/something-something-v2-annotations/'
 
+# DATA_PATH = '/local-ssd/fmthoker/20bn-something-something-v2/something-something-v2-videos_avi'
+# ANNO_PATH = '/local-ssd/fmthoker/20bn-something-something-v2/something-something-v2-annotations/'
+
 DATA_PATH = '/local-ssd/fmthoker/20bn-something-something-v2/something-something-v2-videos_avi'
 ANNO_PATH = '/local-ssd/fmthoker/20bn-something-something-v2/something-something-v2-annotations/'
 
@@ -59,6 +62,7 @@ class SOMETHING(VideoDataset):
                  max_offsync_augm=0,
                  mode='clip',
                  clips_per_video=20,
+                 frame_sampling="random",
                  ):
 
         assert return_audio is False
@@ -159,6 +163,7 @@ class SOMETHING(VideoDataset):
             max_offsync_augm=max_offsync_augm,
             mode=mode,
             clips_per_video=clips_per_video,
+            frame_sampling=frame_sampling,
         )
 
 
