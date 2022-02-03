@@ -1,4 +1,9 @@
-"""Tests performance on contrastive action groups on the SS dataset."""
+"""Tests performance on contrastive action groups on the SS dataset.
+
+Part of this code was adapted from the original paper.
+Code: https://github.com/latte488/smth-smth-v2/blob/master/notebooks/analyse_predictions-confusion_contrastive_groups.ipynb
+Paper: https://openreview.net/pdf?id=rkX9Z_kwf
+"""
 
 import os
 import argparse
@@ -19,7 +24,7 @@ from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import accuracy_score
 from pprint import pprint
 
-# from utils.debug import debug
+from utils.debug import debug
 
 
 parser = argparse.ArgumentParser(description='Evaluation on ESC Sound Classification')
@@ -274,69 +279,22 @@ def main_worker(gpu, ngpus, fold, args, cfg):
     # Optimizer
     optimizer, scheduler = main_utils.build_optimizer(model.parameters(), cfg['optimizer'], logger)
 
-    # Datasets
-    # train_loader, test_loader, dense_loader = eval_utils.build_dataloaders(
-    #     cfg['dataset'], fold, cfg['num_workers'], args.distributed, logger)
-
     # Distribute
     model = distribute_model_to_cuda(model, args, cfg)
 
     # load given checkpoint (of a finetuned model)
-    path = "/var/scratch/fmthoker/ssl_benchmark/checkpoints/CTP_2/Kinetics/downstream/eval-something-full_finetune_112X112x32/fold-01/model_best.pth.tar"
-    # path = args.ckpt
+    # path = "/var/scratch/fmthoker/ssl_benchmark/checkpoints/CTP_2/Kinetics/downstream/eval-something-full_finetune_112X112x32/fold-01/model_best.pth.tar"
+    path = args.ckpt
     print(":: Loading checkpoint: ", path)
     if os.path.exists(path):
         ckpt = torch.load(path, map_location='cpu')
         ckpt_state_dict = ckpt['state_dict']
-        # ckpt_state_dict = {k.replace('module.', ''): v for k, v in ckpt_state_dict.items()}
         model.load_state_dict(ckpt_state_dict, strict=True)
     else:
         raise Exception("No checkpoint found at: ", path)
 
-    # ################################ Test only ################################
-    # if cfg['test_only']:
-    #     #start_epoch = ckp_manager.restore(model, optimizer, scheduler, restore_last=True)
-    #     start_epoch = ckp_manager.restore(model, optimizer, scheduler, restore_best=True)
-    #     logger.add_line("Loaded checkpoint '{}' (epoch {})".format(ckp_manager.best_checkpoint_fn(), start_epoch))
-
-    # ################################ Train ################################
-    start_epoch, end_epoch = 0, cfg['optimizer']['num_epochs']
-    # if cfg['resume'] and ckp_manager.checkpoint_exists(last=True):
-    #     start_epoch = ckp_manager.restore(model, optimizer, scheduler, restore_last=True)
-    #     logger.add_line("Loaded checkpoint '{}' (epoch {})".format(ckp_manager.last_checkpoint_fn(), start_epoch))
-
-    # if not cfg['test_only']:
-    #     logger.add_line("=" * 30 + "   Training   " + "=" * 30)
-
-    #     # Warmup. Train classifier for a few epochs.
-    #     if start_epoch == 0 and 'warmup_classifier' in cfg['optimizer'] and cfg['optimizer']['warmup_classifier']:
-    #         n_wu_epochs = cfg['optimizer']['warmup_epochs'] if 'warmup_epochs' in cfg['optimizer'] else 5
-    #         cls_opt, _ = main_utils.build_optimizer(
-    #             params=[p for n, p in model.named_parameters() if 'feature_extractor' not in n],
-    #             cfg={'lr': {'base_lr': cfg['optimizer']['lr']['base_lr'], 'milestones': [n_wu_epochs,], 'gamma': 1.},
-    #                  'weight_decay': cfg['optimizer']['weight_decay'],
-    #                  'name': cfg['optimizer']['name']}
-    #         )
-    #         print("class opts",cls_opt)
-    #         for epoch in range(n_wu_epochs):
-    #             logger.add_line('LR: {}'.format(scheduler.get_last_lr()))
-    #             run_phase('train', train_loader, model, cls_opt, epoch, args, cfg, logger)
-    #             top1, _ = run_phase('test', test_loader, model, None, epoch, args, cfg, logger)
-
-    #     # Main training loop
-    #     for epoch in range(start_epoch, end_epoch):
-    #         if args.distributed:
-    #             train_loader.sampler.set_epoch(epoch)
-    #             test_loader.sampler.set_epoch(epoch)
-
-    #         logger.add_line('='*30 + ' Epoch {} '.format(epoch) + '='*30)
-    #         logger.add_line('LR: {}'.format(scheduler._last_lr))
-    #         run_phase('train', train_loader, model, optimizer, epoch, args, cfg, logger)
-    #         top1, _ = run_phase('test', test_loader, model, None, epoch, args, cfg, logger)
-    #         ckp_manager.save(model, optimizer, scheduler, epoch, eval_metric=top1)
-    #         scheduler.step(epoch=None)
-
     ################################ Eval ################################
+    start_epoch, end_epoch = 0, cfg['optimizer']['num_epochs']
     logger.add_line('\n' + '=' * 30 + ' Final evaluation ' + '=' * 30)
     cfg['dataset']['test']['clips_per_video'] = 5  # Evaluate clip-level predictions with 25 clips per video for metric stability
     train_loader, test_loader, dense_loader = eval_utils.build_dataloaders(cfg['dataset'], fold, cfg['num_workers'], args.distributed, logger)
@@ -345,18 +303,8 @@ def main_worker(gpu, ngpus, fold, args, cfg):
 
     cag_score = compute_cag_score(outputs, targets)
 
-    from utils.debug import debug
-    debug()
-
-    # outputs, targets = run_phase('test', test_loader, model, None, end_epoch, args, cfg, logger)
-
-
-    # logger.add_line('\n' + '=' * 30 + ' Evaluation done ' + '=' * 30)
-
-    # logger.add_line('Video@1: {:6.2f}'.format(top1_dense))
-    # logger.add_line('Video@MeanTop1: {:6.2f}'.format(mean_top1))
-    # logger.add_line('Video@5: {:6.2f}'.format(top5_dense))
-    # logger.add_line('Video@MeanTop5: {:6.2f}'.format(mean_top5))
+    ################################ Save ################################
+    print(f"\n:::::: CAG score for model {args.pretext_model}: {cag_score:.2f}%\n")
 
 
 def run_phase(phase, loader, model, optimizer, epoch, args, cfg, logger):
@@ -365,9 +313,7 @@ def run_phase(phase, loader, model, optimizer, epoch, args, cfg, logger):
     data_time = metrics_utils.AverageMeter('Data', ':6.3f', window_size=100)
     loss_meter = metrics_utils.AverageMeter('Loss', ':.4e')
     top1_meter = metrics_utils.AverageMeter('Acc@1', ':6.2f')
-    # mean_top1_meter = metrics_utils.AverageMeter('Acc@1', ':6.2f')
     top5_meter = metrics_utils.AverageMeter('Acc@5', ':6.2f')
-    # mean_top5_meter = metrics_utils.AverageMeter('Acc@1', ':6.2f')
     progress = utils.logger.ProgressMeter(len(loader), meters=[batch_time, data_time, loss_meter, top1_meter, top5_meter],
                                           phase=phase, epoch=epoch, logger=logger)
 
@@ -421,12 +367,6 @@ def run_phase(phase, loader, model, optimizer, epoch, args, cfg, logger):
         all_outputs.append(confidence)
         all_targets.append(target)
 
-        # with torch.no_grad():
-        #     acc1, acc5 = metrics_utils.accuracy(confidence, target, topk=(1, 5))
-        #     loss_meter.update(loss.item(), target.size(0))
-        #     top1_meter.update(acc1[0], target.size(0))
-        #     top5_meter.update(acc5[0], target.size(0))
-
         # compute gradient and do SGD step
         if phase == 'train':
             optimizer.zero_grad()
@@ -444,21 +384,6 @@ def run_phase(phase, loader, model, optimizer, epoch, args, cfg, logger):
     all_targets = torch.cat(all_targets)
     classes = all_targets.unique()
 
-    # classwise_top1 = [0 for c in classes]
-    # classwise_top5 = [0 for c in classes]
-    # for c in classes:
-    #     indices = all_targets == c
-    #     mean_top1, mean_top5 = metrics_utils.accuracy(all_outputs[indices], all_targets[indices], topk=(1, 5))
-    #     classwise_top1[c] = mean_top1
-    #     classwise_top5[c] = mean_top5
-    # classwise_top1 = torch.cat(classwise_top1).mean()
-    # classwise_top5 = torch.cat(classwise_top5).mean()
-
-    # if args.distributed:
-    #     progress.synchronize_meters(args.gpu)
-    #     progress.display(len(loader) * args.world_size)
-
-    # return top1_meter.avg, top5_meter.avg, classwise_top1, classwise_top5
     return all_outputs, all_targets
 
 
