@@ -32,24 +32,28 @@ cfg=configs/benchmark/something/112x112x32.yaml
 
 echo "::::::::::::: Model: Full supervision :::::::::::::"
 main=configs/main/full_supervision/kinetics/pretext.yaml
-ckpt=/var/scratch/fmthoker/ssl_benchmark/common_sense_checkpoints/full_supervision/model_best.pth.tar
+# ckpt=/var/scratch/fmthoker/ssl_benchmark/common_sense_checkpoints/full_supervision/model_best.pth.tar
+ckpt=/home/pbagad/models/common_sense_checkpoints/full_supervision/model_best.pth.tar
 python test_ss_cag.py $cfg $main --pretext-model full_supervision --ckpt $ckpt > $log_base_dir/full_supervision.log
 tail $log_base_dir/full_supervision.log
 
 echo "::::::::::::: Model: Scratch :::::::::::::"
 main=configs/main/full_supervision/kinetics/pretext_scratch.yaml
-ckpt=/var/scratch/fmthoker/ssl_benchmark/common_sense_checkpoints/from_scratch/model_best.pth.tar
+# ckpt=/var/scratch/fmthoker/ssl_benchmark/common_sense_checkpoints/from_scratch/model_best.pth.tar
+ckpt=/home/pbagad/models/common_sense_checkpoints/from_scratch/model_best.pth.tar
 python test_ss_cag.py $cfg $main --pretext-model from_scratch --ckpt $ckpt > $log_base_dir/from_scratch.log
 tail $log_base_dir/from_scratch.log
 
 echo "::::::::::::: Model: SELAVI :::::::::::::"
 main=configs/main/selavi/kinetics/pretext.yaml
-ckpt=/var/scratch/fmthoker/ssl_benchmark/common_sense_checkpoints/selavi/model_best.pth.tar
+# ckpt=/var/scratch/fmthoker/ssl_benchmark/common_sense_checkpoints/selavi/model_best.pth.tar
+ckpt=/home/pbagad/models/common_sense_checkpoints/selavi/model_best.pth.tar
 python test_ss_cag.py $cfg $main --pretext-model selavi --ckpt $ckpt > $log_base_dir/selavi.log
 tail $log_base_dir/selavi.log
 
 echo "::::::::::::: Model: VIDOEMOCO :::::::::::::"
 main=configs/main/video_moco/kinetics/pretext.yaml
-ckpt=/var/scratch/fmthoker/ssl_benchmark/common_sense_checkpoints/video_moco/model_best.pth.tar
+# ckpt=/var/scratch/fmthoker/ssl_benchmark/common_sense_checkpoints/video_moco/model_best.pth.tar
+ckpt=/home/pbagad/models/common_sense_checkpoints/video_moco/model_best.pth.tar
 python test_ss_cag.py $cfg $main --pretext-model video_moco --ckpt $ckpt > $log_base_dir/video_moco.log
 tail $log_base_dir/video_moco.log

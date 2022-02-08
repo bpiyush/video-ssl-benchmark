@@ -82,7 +82,9 @@ def get_model(model_cfg, cfg, eval_dir, args, logger):
 def fetch_contrastive_action_group_mapping(
         filepath="./assets/contrastive_groups_list.txt",
     ):
-    class_to_idx_file ="/local-ssd/fmthoker/20bn-something-something-v2/"\
+    # class_to_idx_file ="/local-ssd/fmthoker/20bn-something-something-v2/"\
+    #     "something-something-v2-annotations/something-something-v2-labels.json"
+    class_to_idx_file ="/ssd/fmthoker/20bn-something-something-v2/"\
         "something-something-v2-annotations/something-something-v2-labels.json"
     with open(class_to_idx_file) as f:
         class_to_idx = json.load(f)
@@ -181,7 +183,6 @@ def compute_cag_score(logits_matrix, targets_list):
             if str(target.item()) not in targets_action_grp:
                 continue
             else:
-                print("hi")
                 true_ag_label.append(targets_action_grp.index(str(target.item())))
                 pred_ag = get_argmax_over_predefined_targets([int(x) for x in targets_action_grp], logits)
                 pred_ag_label.append(str(pred_ag.item()))
