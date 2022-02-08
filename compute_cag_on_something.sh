@@ -17,18 +17,19 @@ cfg=configs/benchmark/something/112x112x32.yaml
 # python test_ss_cag.py $cfg $main --pretext-model ctp --ckpt $ckpt > $log_base_dir/ctp.log
 # tail $log_base_dir/ctp.log
 
-# echo "::::::::::::: Model: RSPNet :::::::::::::"
-# main=configs/main/rspnet/kinetics/pretext.yaml
-# ckpt=/var/scratch/fmthoker/ssl_benchmark/checkpoints/RSPNET_2/Kinetics/downstream/eval-something-full_finetune_112X112x32/fold-01/model_best.pth.tar
-# python test_ss_cag.py $cfg $main --pretext-model rspnet --ckpt $ckpt > $log_base_dir/rspnet.log
-# tail $log_base_dir/rspnet.log
+echo "::::::::::::: Model: RSPNet :::::::::::::"
+main=configs/main/rspnet/kinetics/pretext.yaml
+ckpt=/home/pbagad/models/common_sense_checkpoints/rspnet_snellius/model_best.pth.tar
+python test_ss_cag.py $cfg $main --pretext-model rspnet --ckpt $ckpt > $log_base_dir/rspnet.log
+tail $log_base_dir/rspnet.log
 
 
-# echo "::::::::::::: Model: TCLR :::::::::::::"
-# main=configs/main/tclr/kinetics/pretext.yaml
-# ckpt=/var/scratch/fmthoker/ssl_benchmark/checkpoints/TCLR/Kinetics/downstream/eval-something-full_finetune_112X112x32/fold-01/model_best.pth.tar
-# python test_ss_cag.py $cfg $main --pretext-model tclr --ckpt $ckpt > $log_base_dir/tclr.log
-# tail $log_base_dir/tclr.log
+echo "::::::::::::: Model: TCLR :::::::::::::"
+main=configs/main/tclr/kinetics/pretext.yaml
+cfg_tclr=configs/benchmark/something/112x112x32_tclr.yaml
+ckpt=/home/pbagad/models/common_sense_checkpoints/tclr/model_best.pth.tar
+python test_ss_cag.py $cfg_tclr $main --pretext-model tclr --ckpt $ckpt > $log_base_dir/tclr.log
+tail $log_base_dir/tclr.log
 
 echo "::::::::::::: Model: Full supervision :::::::::::::"
 main=configs/main/full_supervision/kinetics/pretext.yaml

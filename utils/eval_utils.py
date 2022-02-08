@@ -226,6 +226,8 @@ def build_dataloader(db_cfg, split_cfg, fold, num_workers, distributed):
             augment=split_cfg['use_augmentation'],
             min_area=db_cfg['min_area'],
             color=db_cfg['color'],
+            switch_channels =db_cfg['switch_channels'],
+            normalize =db_cfg['normalize'],
         )
     elif db_cfg['transform'] == 'crop+color':
         video_transform = preprocessing.VideoPrep_Crop_CJ(
@@ -233,6 +235,8 @@ def build_dataloader(db_cfg, split_cfg, fold, num_workers, distributed):
             num_frames=int(db_cfg['video_fps'] * db_cfg['clip_duration']),
             pad_missing=True,
             augment=split_cfg['use_augmentation'],
+            switch_channels =db_cfg['switch_channels'],
+            normalize =db_cfg['normalize'],
         )
     else:
         raise ValueError
