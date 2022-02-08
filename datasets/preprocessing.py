@@ -11,10 +11,10 @@ import random
 #import librosa
 from utils.videotransforms import video_transforms, volume_transforms, tensor_transforms
 
-# MEAN = [0.485, 0.456, 0.406]
-# STD = [0.229, 0.224, 0.225]
-MEAN = [0.43216, 0.394666, 0.37645]
-STD = [0.22803, 0.22145, 0.216989]
+MEAN = [0.485, 0.456, 0.406]
+STD = [0.229, 0.224, 0.225]
+# MEAN = [0.43216, 0.394666, 0.37645]
+# STD = [0.22803, 0.22145, 0.216989]
 
 
 class VideoPrep_MSC_CJ(object):
@@ -27,6 +27,7 @@ class VideoPrep_MSC_CJ(object):
                  totensor=True,
                  num_frames=8,
                  pad_missing=False,
+                 switch_channels = False,
                  ):
         self.crop = crop
         self.augment = augment
@@ -51,6 +52,10 @@ class VideoPrep_MSC_CJ(object):
             transforms += [volume_transforms.ClipToTensor()]
             if normalize:
                 transforms += [tensor_transforms.Normalize(mean=MEAN, std=STD)]
+
+            if switch_channels:
+                transforms += [tensor_transforms.switch_channels()]
+
         self.transform = video_transforms.Compose(transforms)
 
     def __call__(self, frames):
@@ -75,6 +80,7 @@ class VideoPrep_Crop_CJ(object):
                  augment=True,
                  normalize=True,
                  totensor=True,
+                 switch_channels=False,
                  ):
         self.resize = resize
         self.crop = crop
@@ -102,6 +108,10 @@ class VideoPrep_Crop_CJ(object):
             if normalize:
                 transforms += [tensor_transforms.Normalize(
                     mean=MEAN, std=STD)]
+
+            if switch_channels:
+                transforms += [tensor_transforms.switch_channels()]
+
         self.transform = video_transforms.Compose(transforms)
 
     def __call__(self, frames):

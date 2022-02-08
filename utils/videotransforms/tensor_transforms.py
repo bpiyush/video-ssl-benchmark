@@ -10,6 +10,21 @@ import torch
 from utils.videotransforms.utils import functional as F
 
 
+class switch_channels(object):
+    """
+    """
+
+    def __init__(self ):
+        self.permute = [2, 1, 0]
+
+    def __call__(self, tensor):
+        """
+        """
+        #print("switch_channels = True")
+        tensor  = tensor[self.permute,:,:,:]
+        return tensor 
+
+
 class Normalize(object):
     """Normalize a tensor image with mean and standard deviation
 
