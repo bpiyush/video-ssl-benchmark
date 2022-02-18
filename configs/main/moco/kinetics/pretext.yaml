@@ -1,0 +1,5 @@
+model:
+  name: "downstream"
+  model_dir: "checkpoints/MOCO/Kinetics"
+  checkpoint: "pretext_checkpoint/checkpoint_0199.pth.tar"
+  arch: "r2plus1d_18"

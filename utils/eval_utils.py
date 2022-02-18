@@ -152,6 +152,34 @@ def load_pretext_contrast_checkpoint(model,checkpoint_fn):
      else:
             print("=> no checkpoint found at '{}'".format(checkpoint_fn))
 
+
+def load_moco_checkpoint(model,pretrained):
+    # load from pre-trained, before DistributedDataParallel constructor
+    if pretrained:
+        if os.path.isfile(pretrained):
+            print("=> loading checkpoint '{}'".format(pretrained))
+            checkpoint = torch.load(pretrained, map_location="cpu")
+
+            # rename moco pre-trained keys
+            state_dict = checkpoint['state_dict']
+            for k in list(state_dict.keys()):
+                # retain only encoder_q up to before the embedding layer
+                if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
+                    # remove prefix
+                    state_dict[k[len("module.encoder_q."):]] = state_dict[k]
+                # delete renamed or unused k
+                del state_dict[k]
+
+            #args.start_epoch = 0
+            msg = model.load_state_dict(state_dict, strict=False)
+            print(msg)
+            assert set(msg.missing_keys) == {"fc.weight", "fc.bias"}
+
+            print("=> loaded pre-trained model '{}'".format(pretrained))
+        else:
+            print("=> no checkpoint found at '{}'".format(pretrained))
+
+
 def load_video_moco_checkpoint(model,pretrained):
     # load from pre-trained, before DistributedDataParallel constructor
     if pretrained:
@@ -226,8 +254,8 @@ def build_dataloader(db_cfg, split_cfg, fold, num_workers, distributed):
             augment=split_cfg['use_augmentation'],
             min_area=db_cfg['min_area'],
             color=db_cfg['color'],
-            switch_channels =db_cfg['switch_channels'],
-            normalize =db_cfg['normalize'],
+            switch_channels =db_cfg.get('switch_channels', False),
+            normalize =db_cfg.get('normalize', True),
         )
     elif db_cfg['transform'] == 'crop+color':
         video_transform = preprocessing.VideoPrep_Crop_CJ(
@@ -755,6 +783,36 @@ def build_model_selavi(feat_cfg, eval_cfg, eval_dir, args, logger):
         dropout=0.7
     )
 
+
+    # Log model description
+    logger.add_line("=" * 30 + "   Model   " + "=" * 30)
+    logger.add_line(str(model))
+    logger.add_line("=" * 30 + "   Parameters   " + "=" * 30)
+    logger.add_line(main_utils.parameter_description(model))
+    logger.add_line("=" * 30 + "   Pretrained model   " + "=" * 30)
+    logger.add_line("File: {}".format(checkpoint_fn))
+
+    ckp_manager = CheckpointManager(eval_dir, rank=args.gpu)
+    return model, ckp_manager
+
+
+def build_model_moco(feat_cfg, eval_cfg, eval_dir, args, logger):
+
+    import torchvision.models.video as models
+    model_names = sorted(name for name in models.__dict__
+                         if name.islower() and not name.startswith("__")
+                         and callable(models.__dict__[name]))
+
+    # create model
+    print("=============> creating model '{}'".format(feat_cfg['arch']))
+    model = models.__dict__[feat_cfg['arch']]()
+
+    # Load from checkpoint
+    checkpoint_fn = '{}/{}'.format(feat_cfg['model_dir'] ,feat_cfg['checkpoint'])
+    load_moco_checkpoint(model,checkpoint_fn)
+
+    # Wrap with linear-head classifiers
+    model.fc = nn.Linear(eval_cfg['model']['args']['feat_dim'], eval_cfg['model']['args']['n_classes'])
 
     # Log model description
     logger.add_line("=" * 30 + "   Model   " + "=" * 30)

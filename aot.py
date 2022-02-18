@@ -71,6 +71,8 @@ def get_model(model_cfg, cfg, eval_dir, args, logger):
             model, ckp_manager =  eval_utils.build_model_ctp(model_cfg, cfg, eval_dir, args, logger)
     elif args.pretext_model== 'video_moco':
             model, ckp_manager =  eval_utils.build_model_video_moco(model_cfg, cfg, eval_dir, args, logger)
+    elif args.pretext_model== 'moco':
+            model, ckp_manager =  eval_utils.build_model_moco(model_cfg, cfg, eval_dir, args, logger)
     elif args.pretext_model== 'selavi':
             model, ckp_manager =  eval_utils.build_model_selavi(model_cfg, cfg, eval_dir, args, logger)
     elif args.pretext_model== 'full_supervision':
