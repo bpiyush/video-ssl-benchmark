@@ -123,9 +123,12 @@ def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None)
     initialized from given VSSL method checkpoint.
 
     Args:
-        backbone (str, optional): Backbone from `torchvision.models`. Defaults to "r2plus1d_18".
-        init_method (str, optional): VSSL methods from which to initialize weights. Defaults to "scratch".
-        ckpt_path ([str, None], optional): path to checkpoint for the given VSSL method. Defaults to None.
+        backbone (str, optional): Backbone from `torchvision.models`.
+            Defaults to "r2plus1d_18".
+        init_method (str, optional): VSSL methods from which to initialize weights.
+            Defaults to "scratch".
+        ckpt_path ([str, None], optional): path to checkpoint for the given VSSL method.
+            Defaults to None.
     """
     
     _check_inputs(backbone, init_method, ckpt_path)
