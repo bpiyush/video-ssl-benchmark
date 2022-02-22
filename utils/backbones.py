@@ -19,6 +19,7 @@ def _check_inputs(backbone, init_method, ckpt_path):
         "supervised",
         "CTP",
         "GDT",
+        "RSPNet",
     ]
     
     if init_method in ["scratch", "supervised"]:
@@ -117,6 +118,29 @@ def load_gdt_checkpoint(ckpt_path, verbose=False):
     return new_csd
 
 
+def load_rspnet_checkpoint(ckpt_path, verbose=False):
+    ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
+    csd = ckpt["model"]
+    
+    # filter out encoder_k related keys
+    # csd = {k:v for k,v in csd.items() if not k.startswith(("encoder_k.", "mlp_a"))}
+    
+    prefix = 'encoder_q.'
+    blacklist = ['fc.', 'linear', 'head', 'new_fc', 'fc8', 'encoder_fuse']
+
+    def filter(k):
+        return k.startswith(prefix) and not any(k.startswith(f'{prefix}{fc}') for fc in blacklist)
+
+    new_csd = {k[len(prefix):]: v for k, v in csd.items() if filter(k)}
+    
+    # remove prefixes
+    new_csd = {k.replace("encoder.base_network.", "layer"): v for k, v in new_csd.items()}
+    # replace layer0 with stem
+    new_csd = {k.replace("layer0.", "stem."): v for k, v in new_csd.items()}
+    
+    return new_csd
+
+
 def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None):
     """
     Loads given backbone (e.g. R2+1D from `torchvision.models`) with weights
@@ -130,17 +154,14 @@ def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None)
         ckpt_path ([str, None], optional): path to checkpoint for the given VSSL method.
             Defaults to None.
     """
-    
+
     _check_inputs(backbone, init_method, ckpt_path)
     
     backbone = getattr(video_models, backbone)(pretrained=(init_method == "supervised"))
     message = f"Checkpoint path not needed for {init_method} backbone."
     
-    if init_method == "CTP":
-        state_dict = load_ctp_checkpoint(ckpt_path)
-        message = backbone.load_state_dict(state_dict, strict=False)
-    elif init_method == "GDT":
-        state_dict = load_gdt_checkpoint(ckpt_path)
+    if init_method not in ["scratch", "supervised"]:
+        state_dict = eval(f"load_{init_method.lower()}_checkpoint")(ckpt_path)
         message = backbone.load_state_dict(state_dict, strict=False)
         
     print_update(f"Loaded {init_method} checkpoint")
@@ -161,11 +182,18 @@ if __name__ == "__main__":
     # Print summary
     # summary(model.to(device), (3, 16, 112, 112))
     
+    # test RSPNet
+    model = load_backbone(
+        "r2plus1d_18",
+        "RSPNet",
+        ckpt_path="/home/pbagad/models/checkpoints_pretraining/rspnet/snellius_checkpoint_epoch_200.pth.tar",
+    )
+    
     # test GDT
     model = load_backbone(
         "r2plus1d_18",
         "GDT",
-        ckpt_path="/home/pbagad/models/checkpoints_pretraining//gdt/gdt_K400.pth",
+        ckpt_path="/home/pbagad/models/checkpoints_pretraining/gdt/gdt_K400.pth",
     )
     
     # test CTP
