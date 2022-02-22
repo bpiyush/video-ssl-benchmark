@@ -122,9 +122,7 @@ def load_rspnet_checkpoint(ckpt_path, verbose=False):
     ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
     csd = ckpt["model"]
     
-    # filter out encoder_k related keys
-    # csd = {k:v for k,v in csd.items() if not k.startswith(("encoder_k.", "mlp_a"))}
-    
+    # filter out encoder_k related keys    
     prefix = 'encoder_q.'
     blacklist = ['fc.', 'linear', 'head', 'new_fc', 'fc8', 'encoder_fuse']
 
@@ -163,7 +161,7 @@ def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None)
     if init_method not in ["scratch", "supervised"]:
         state_dict = eval(f"load_{init_method.lower()}_checkpoint")(ckpt_path)
         message = backbone.load_state_dict(state_dict, strict=False)
-        
+
     print_update(f"Loaded {init_method} checkpoint")
     print("Path: {}".format(ckpt_path))
     print("Message: {}".format(message))
