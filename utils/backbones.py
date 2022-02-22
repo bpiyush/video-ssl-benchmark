@@ -8,6 +8,8 @@ from torchsummary import summary
 
 import torchvision.models.video as video_models
 
+from utils.misc import print_update
+
 
 def _check_inputs(backbone, init_method, ckpt_path):
     """Checks inputs for load_backbone()."""
@@ -15,7 +17,8 @@ def _check_inputs(backbone, init_method, ckpt_path):
     assert init_method in [
         "scratch",
         "supervised",
-        "CTP", 
+        "CTP",
+        "GDT",
     ]
     
     if init_method in ["scratch", "supervised"]:
@@ -98,6 +101,22 @@ def load_ctp_checkpoint(ckpt_path, verbose=False):
     return new_csd
 
 
+def load_gdt_checkpoint(ckpt_path, verbose=False):
+    ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
+    csd = ckpt["model"]
+    
+    # filter out audio network related keys
+    csd = {k:v for k,v in csd.items() if not k.startswith(("audio_network", "mlp_a"))}
+    
+    # define mapping from csd keys to backbone keys
+    mapping = lambda x: x.replace("video_network.base.", "")
+    
+    # construct a new state dict that is fully compatible with R2+1D backbone
+    new_csd = {mapping(k):v for k,v in csd.items()}
+    
+    return new_csd
+
+
 def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None):
     """
     Loads given backbone (e.g. R2+1D from `torchvision.models`) with weights
@@ -112,12 +131,18 @@ def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None)
     _check_inputs(backbone, init_method, ckpt_path)
     
     backbone = getattr(video_models, backbone)(pretrained=(init_method == "supervised"))
+    message = f"Checkpoint path not needed for {init_method} backbone."
     
     if init_method == "CTP":
         state_dict = load_ctp_checkpoint(ckpt_path)
         message = backbone.load_state_dict(state_dict, strict=False)
-        print("::: Loaded CTP checkpoint from {} :::".format(ckpt_path))
-        print(message)
+    elif init_method == "GDT":
+        state_dict = load_gdt_checkpoint(ckpt_path)
+        message = backbone.load_state_dict(state_dict, strict=False)
+        
+    print_update(f"Loaded {init_method} checkpoint")
+    print("Path: {}".format(ckpt_path))
+    print("Message: {}".format(message))
 
     return backbone
 
@@ -131,7 +156,14 @@ if __name__ == "__main__":
     model = load_backbone("r2plus1d_18", "scratch")
 
     # Print summary
-    summary(model.to(device), (3, 16, 112, 112))
+    # summary(model.to(device), (3, 16, 112, 112))
+    
+    # test GDT
+    model = load_backbone(
+        "r2plus1d_18",
+        "GDT",
+        ckpt_path="/home/pbagad/models/checkpoints_pretraining//gdt/gdt_K400.pth",
+    )
     
     # test CTP
     model = load_backbone(
