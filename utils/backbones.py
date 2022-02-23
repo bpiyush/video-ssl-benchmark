@@ -1,4 +1,18 @@
-"""Helper functions for loading/working with backbones for various VSSL methods."""
+"""Helper functions for loading/working with backbones for various VSSL methods.
+
+The script has inbuilt demo tests for the following backbones:
+["scratch", "supervised", "CTP", "GDT", "RSPNet", "TCLR", "PretextContrast", "VideoMoCo"]
+
+Usage:
+
+(bash) $ python3 -m utils.backbones
+
+OR 
+
+(bash) conda activate conda-env
+(conda-env) $ export PYTHONPATH=$PWD
+(conda-env) $ python utils/backbones.py
+"""
 
 import re
 import os
