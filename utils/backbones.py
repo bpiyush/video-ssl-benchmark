@@ -1,7 +1,17 @@
 """Helper functions for loading/working with backbones for various VSSL methods.
 
 The script has inbuilt demo tests for the following backbones:
-["scratch", "supervised", "CTP", "GDT", "RSPNet", "TCLR", "PretextContrast", "VideoMoCo"]
+[
+    "scratch",
+    "supervised",
+    "CTP",
+    "GDT",
+    "RSPNet",
+    "TCLR",
+    "PretextContrast",
+    "VideoMoCo",
+    "MoCo",
+]
 
 Usage:
 
@@ -59,6 +69,7 @@ def _check_inputs(backbone, init_method, ckpt_path):
         "TCLR",
         "PretextContrast",
         "VideoMoCo",
+        "MoCo",
     ]
     
     if init_method in ["scratch", "supervised"]:
@@ -213,6 +224,19 @@ def load_videomoco_checkpoint(ckpt_path, verbose=False):
     return csd
 
 
+def load_moco_checkpoint(ckpt_path, verbose=False):
+    ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
+    csd = ckpt["state_dict"]
+    
+    # filter out encoder_k keys and remove module.encoder_q.
+    csd = {k.replace("module.encoder_q.", ""): v for k, v in csd.items() if not k.startswith("module.encoder_k.")}
+    
+    # remove fc keys
+    csd = {k:v for k,v in csd.items() if not k.startswith("fc.")}
+    
+    return csd
+
+
 def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None):
     """
     Loads given backbone (e.g. R2+1D from `torchvision.models`) with weights
@@ -252,6 +276,13 @@ if __name__ == "__main__":
 
     # Print summary
     # summary(model.to(device), (3, 16, 112, 112))
+
+    # test MoCo
+    model = load_backbone(
+        "r2plus1d_18",
+        "MoCo",
+        ckpt_path="/home/pbagad/models/checkpoints_pretraining/moco/checkpoint_0199.pth.tar",
+    )
 
     # test PretextContrast
     model = load_backbone(
