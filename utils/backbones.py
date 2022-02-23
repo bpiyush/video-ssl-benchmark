@@ -11,6 +11,7 @@ The script has inbuilt demo tests for the following backbones:
     "PretextContrast",
     "VideoMoCo",
     "MoCo",
+    "SeLaVi",
 ]
 
 Usage:
@@ -70,6 +71,7 @@ def _check_inputs(backbone, init_method, ckpt_path):
         "PretextContrast",
         "VideoMoCo",
         "MoCo",
+        "SeLaVi",
     ]
     
     if init_method in ["scratch", "supervised"]:
@@ -79,7 +81,6 @@ def _check_inputs(backbone, init_method, ckpt_path):
         assert ckpt_path is not None, f"{init_method} must be initialized from a checkpoint."
         if not os.path.exists(ckpt_path):
             raise FileNotFoundError(f"{ckpt_path} does not exist.")
-
 
 
 def load_ctp_checkpoint(ckpt_path, verbose=False):
@@ -237,6 +238,20 @@ def load_moco_checkpoint(ckpt_path, verbose=False):
     return csd
 
 
+def load_selavi_checkpoint(ckpt_path, verbose=False):
+    ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
+    
+    csd = ckpt["model"]
+    
+    # filter only video base network keys
+    csd = {
+        k.replace("module.video_network.base.", ""):v for k,v in \
+        csd.items() if k.startswith("module.video_network.base.")
+    }
+    
+    return csd
+
+
 def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None):
     """
     Loads given backbone (e.g. R2+1D from `torchvision.models`) with weights
@@ -276,6 +291,13 @@ if __name__ == "__main__":
 
     # Print summary
     # summary(model.to(device), (3, 16, 112, 112))
+
+    # test SeLaVi
+    model = load_backbone(
+        "r2plus1d_18",
+        "SeLaVi",
+        ckpt_path="/home/pbagad/models/checkpoints_pretraining/selavi/selavi_kinetics.pth",
+    )
 
     # test MoCo
     model = load_backbone(
