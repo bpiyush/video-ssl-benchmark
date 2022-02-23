@@ -17,7 +17,11 @@ OR
 import re
 import os
 
-from termcolor import colored
+try:
+    from termcolor import colored
+except:
+    os.system("pip install termcolor")
+    from termcolor import colored
 
 import torch
 from torchsummary import summary
