@@ -12,6 +12,7 @@ The script has inbuilt demo tests for the following backbones:
     "VideoMoCo",
     "MoCo",
     "SeLaVi",
+    "AVID_CMA",
 ]
 
 Usage:
@@ -72,6 +73,7 @@ def _check_inputs(backbone, init_method, ckpt_path):
         "VideoMoCo",
         "MoCo",
         "SeLaVi",
+        "AVID_CMA",
     ]
     
     if init_method in ["scratch", "supervised"]:
@@ -240,13 +242,25 @@ def load_moco_checkpoint(ckpt_path, verbose=False):
 
 def load_selavi_checkpoint(ckpt_path, verbose=False):
     ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
-    
     csd = ckpt["model"]
     
     # filter only video base network keys
     csd = {
         k.replace("module.video_network.base.", ""):v for k,v in \
         csd.items() if k.startswith("module.video_network.base.")
+    }
+    
+    return csd
+
+
+def load_avid_cma_checkpoint(ckpt_path, verbose=False):
+    ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
+    csd = ckpt["model"]
+    
+    # filter only video based network keys
+    csd = {
+        k.replace("module.video_model.", ""):v for k,v in \
+        csd.items() if k.startswith("module.video_model.")
     }
     
     return csd
@@ -291,6 +305,13 @@ if __name__ == "__main__":
 
     # Print summary
     # summary(model.to(device), (3, 16, 112, 112))
+
+    # test AVID-CMA
+    model = load_backbone(
+        "r2plus1d_18",
+        "AVID_CMA",
+        ckpt_path="/home/pbagad/models/checkpoints_pretraining/avid_cma/avid_cma_ckpt-ep20.pth.tar",
+    )
 
     # test SeLaVi
     model = load_backbone(
