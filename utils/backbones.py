@@ -194,15 +194,51 @@ def load_rspnet_checkpoint(ckpt_path, verbose=False):
 
 def load_tclr_checkpoint(ckpt_path, verbose=False):
     ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
-    import ipdb; ipdb.set_trace()
     csd = ckpt["state_dict"]
     
-    # ignore keys staring with module.1.
-    csd = {k:v for k,v in csd.items() if not k.startswith("module.1.")}
+    bsd = video_models.r2plus1d_18().state_dict()
     
-    # remove from key module.0.
-    new_csd = {k.replace("module.0.", ""): v for k, v in csd.items()}
+    # replace stem keys
+    csd = {k.replace("module.0.stem", "stem"):v for k,v in csd.items()}
     
+    # replace layer1 keys
+    prefix = "layer1"
+    csd_subset = [
+        k.replace(f"module.0.{prefix}", f"{prefix}") \
+        for k in csd.keys() if k.startswith(f"module.0.{prefix}")
+    ]
+    bsd_subset = [x for x in bsd.keys() if x.startswith(prefix)]
+    assert set(csd_subset) == set(bsd_subset)
+
+    prefix = "layer2"
+    csd_subset = [
+        k.replace(f"module.0.{prefix}", f"{prefix}") \
+        for k in csd.keys() if k.startswith(f"module.0.{prefix}")
+    ]
+    bsd_subset = [x for x in bsd.keys() if x.startswith(prefix)]
+    assert set(csd_subset) == set(bsd_subset)
+
+    prefix = "layer3"
+    csd_subset = [
+        k.replace(f"module.0.{prefix}", f"{prefix}") \
+        for k in csd.keys() if k.startswith(f"module.0.{prefix}")
+    ]
+    bsd_subset = [x for x in bsd.keys() if x.startswith(prefix)]
+    assert set(csd_subset) == set(bsd_subset)
+
+    prefix = "layer4"
+    csd_subset = [
+        k.replace(f"module.0.{prefix}", f"{prefix}") \
+        for k in csd.keys() if k.startswith(f"module.0.{prefix}")
+    ]
+    bsd_subset = [x for x in bsd.keys() if x.startswith(prefix)]
+    assert set(csd_subset) == set(bsd_subset)
+    
+    # TODO: There is a discrepancy between the number of layers in the csd and the bsd.
+    # This is because the TCLR checkpoint has few layers less than the R2+1D backbone.
+    # This shall be fixed in the future.
+    raise NotImplementedError
+
 
 def load_pretextcontrast_checkpoint(ckpt_path, verbose=False):
     csd = torch.load(ckpt_path, map_location=torch.device("cpu"))
