@@ -20,6 +20,8 @@ def _check_inputs(backbone, init_method, ckpt_path):
         "CTP",
         "GDT",
         "RSPNet",
+        "TCLR",
+        "PretextContrast",
     ]
     
     if init_method in ["scratch", "supervised"]:
@@ -139,6 +141,28 @@ def load_rspnet_checkpoint(ckpt_path, verbose=False):
     return new_csd
 
 
+def load_tclr_checkpoint(ckpt_path, verbose=False):
+    ckpt = torch.load(ckpt_path, map_location=torch.device("cpu"))
+    import ipdb; ipdb.set_trace()
+    csd = ckpt["state_dict"]
+    
+    # ignore keys staring with module.1.
+    csd = {k:v for k,v in csd.items() if not k.startswith("module.1.")}
+    
+    # remove from key module.0.
+    new_csd = {k.replace("module.0.", ""): v for k, v in csd.items()}
+    
+
+def load_pretextcontrast_checkpoint(ckpt_path, verbose=False):
+    csd = torch.load(ckpt_path, map_location=torch.device("cpu"))
+    
+    # define key mapping
+    csd = {k.replace("module.base_network.0", "stem"): v for k, v in csd.items()}
+    csd = {k.replace("module.base_network.", "layer"):v for k,v in csd.items()}
+    
+    return csd
+
+
 def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None):
     """
     Loads given backbone (e.g. R2+1D from `torchvision.models`) with weights
@@ -158,11 +182,10 @@ def load_backbone(backbone="r2plus1d_18", init_method="scratch", ckpt_path=None)
     backbone = getattr(video_models, backbone)(pretrained=(init_method == "supervised"))
     message = f"Checkpoint path not needed for {init_method} backbone."
     
+    print_update(f"Loading {init_method} checkpoint")
     if init_method not in ["scratch", "supervised"]:
         state_dict = eval(f"load_{init_method.lower()}_checkpoint")(ckpt_path)
         message = backbone.load_state_dict(state_dict, strict=False)
-
-    print_update(f"Loaded {init_method} checkpoint")
     print("Path: {}".format(ckpt_path))
     print("Message: {}".format(message))
 
@@ -180,6 +203,20 @@ if __name__ == "__main__":
     # Print summary
     # summary(model.to(device), (3, 16, 112, 112))
     
+    # test PretextContrast
+    model = load_backbone(
+        "r2plus1d_18",
+        "PretextContrast",
+        ckpt_path="/home/pbagad/models/checkpoints_pretraining/pretext_checkpoint/pcl_r2p1d_res_ssl.pt",
+    )
+
+    # # test TCLR
+    # model = load_backbone(
+    #     "r2plus1d_18",
+    #     "TCLR",
+    #     ckpt_path="/home/pbagad/models/checkpoints_pretraining/tclr/rpd18kin400.pth",
+    # )
+
     # test RSPNet
     model = load_backbone(
         "r2plus1d_18",
