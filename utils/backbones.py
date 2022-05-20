@@ -338,9 +338,17 @@ if __name__ == "__main__":
     
     # Load model
     model = load_backbone("r2plus1d_18", "scratch")
+    x = torch.randn((1, 3, 16, 112, 112))
+    y = model(x)
+    assert y.shape == torch.Size([1, 400])
 
     # Print summary
-    # summary(model.to(device), (3, 16, 112, 112))
+    summary(model.to(device), (3, 16, 112, 112))
+
+    # make FC layer as identity
+    model.fc = torch.nn.Identity()
+    y = model(x.to(device))
+    assert y.shape == torch.Size([1, 512])
 
     # test AVID-CMA
     model = load_backbone(
@@ -348,6 +356,12 @@ if __name__ == "__main__":
         "AVID_CMA",
         ckpt_path="/home/pbagad/models/checkpoints_pretraining/avid_cma/avid_cma_ckpt-ep20.pth.tar",
     )
+
+    # make FC layer as identity
+    model = model.to(device)
+    model.fc = torch.nn.Identity()
+    y = model(x.to(device))
+    assert y.shape == torch.Size([1, 512])
 
     # test SeLaVi
     model = load_backbone(
